@@ -27,10 +27,16 @@ PRODUCTS = {
         "url": "https://www.canyon.com/nl-nl/gear/accessories/racks/tubus-cargo-evo-28-bike-rack/10010278.html",
         "min_price": 50,
         "max_price": 300
+    },
+    "forklift": {
+        "url": "https://binarynights.com/store",
+        "selector": "#price-label-1",
+        "min_price": 1,
+        "max_price": 100
     }
 }
 
-PRICE_REGEX = r"€\s?[0-9]+(?:\.[0-9]{3})*(?:,[0-9]{2})?|[0-9]+(?:\.[0-9]{3})*(?:,[0-9]{2})?\s?€"
+PRICE_REGEX = r"[$€]\s?[0-9]+(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?|[0-9]+(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?\s?[$€]"
 STATE_FILE = Path(os.environ.get("DATA_DIR", Path(__file__).parent)) / "prices.json"
 CHECK_INTERVAL = 86400
 
@@ -46,13 +52,27 @@ def save_state(state):
 
 def normalize(price_str):
     try:
-        return float(price_str.replace("€", "").replace(".", "").replace(",", ".").strip())
+        s = price_str.replace("€", "").replace("$", "").strip()
+        # US format: 1,234.56
+        if "." in s and "," in s:
+            if s.index(",") < s.index("."):
+                s = s.replace(",", "")
+            else:
+                s = s.replace(".", "").replace(",", ".")
+        elif "," in s:
+            s = s.replace(",", ".")
+        return float(s)
     except ValueError:
         return None
 
-def extract_price_from_page(page, min_price, max_price):
-    body_text = page.inner_text("body")
-    matches = re.findall(PRICE_REGEX, body_text)
+def extract_price_from_page(page, min_price, max_price, selector=None):
+    if selector:
+        el = page.query_selector(selector)
+        text = el.inner_text() if el else ""
+    else:
+        text = page.inner_text("body")
+
+    matches = re.findall(PRICE_REGEX, text)
     values = []
     for m in matches:
         v = normalize(m)
@@ -84,7 +104,7 @@ def check_prices():
                 page.goto(cfg["url"], wait_until="load", timeout=60000)
                 page.wait_for_timeout(3000)
 
-                price = extract_price_from_page(page, cfg["min_price"], cfg["max_price"])
+                price = extract_price_from_page(page, cfg["min_price"], cfg["max_price"], cfg.get("selector"))
                 page.close()
 
                 if price is None:
