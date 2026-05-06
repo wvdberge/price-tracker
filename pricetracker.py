@@ -33,6 +33,16 @@ PRODUCTS = {
         "selector": "#price-label-1",
         "min_price": 1,
         "max_price": 100
+    },
+    "tire_lever": {
+        "url": "https://www.canyon.com/nl-nl/gear/accessories/bikecare-and-service/bike-maintenance/canyon-tire-lever/10006000.html",
+        "min_price": 1,
+        "max_price": 50
+    },
+    "oval_rail_adapter": {
+        "url": "https://www.canyon.com/nl-nl/gear/bike-parts/posts-and-clamps/canyon-gp0188-01-adapter-for-oval-rails/10002535.html",
+        "min_price": 1,
+        "max_price": 100
     }
 }
 
